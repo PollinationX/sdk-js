@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "lib": ["es2017", "es7", "es6", "dom", "dom.iterable"],
+        "declaration": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "outDir": "dist",
+        "strict": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
