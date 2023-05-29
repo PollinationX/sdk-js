@@ -1,8 +1,10 @@
 import axios, { AxiosInstance } from 'axios'
 import { axiosMethodOptions } from './config'
+import { IWallet } from './config/types'
 import * as FormData from 'form-data'
 import * as path from 'path'
 import * as tarStream from 'tar-stream'
+import * as ethers from 'ethers'
 
 interface IInitParams {
   url: string
@@ -29,25 +31,6 @@ class PollinationX {
     })
   }
 
-  list = async (): Promise<any[] | null> => {
-    if (!this.client) throw new Error('Call init first')
-
-    const statRes = await this.client.post('/files/stat', null, {
-      params: axiosMethodOptions.stat.params,
-      headers: axiosMethodOptions.default.headers
-    })
-
-    const hash = statRes.data?.Hash
-    if (!hash) throw new Error('An error occurred while fetching list')
-
-    const listRes = await this.client.post('/ls', null, {
-      params: { arg: hash },
-      headers: axiosMethodOptions.default.headers
-    })
-
-    return listRes.data?.Objects[0]?.Links || null
-  }
-
   upload = async (buffer: Buffer, filename: string): Promise<string> => {
     if (!this.client) throw new Error('Call init first')
     if (!buffer) throw new Error('Buffer is required')
@@ -67,18 +50,6 @@ class PollinationX {
     const hash = addRes.data?.Hash
     if (!hash) throw new Error('An error occurred during uploading')
 
-    let cpRes = false
-    let index = 1
-
-    do {
-      if (!(cpRes = await this.cp(hash, filename))) {
-        filename = `${parsedPath.name}-${index}${parsedPath.ext}`
-        index++
-      }
-
-      if (index === 100) throw new Error('An error occurred during uploading')
-    } while (!cpRes)
-
     return hash
   }
 
@@ -95,14 +66,12 @@ class PollinationX {
     }
   }
 
-  download = async (url: string): Promise<Buffer> => {
+  download = async (hash: string): Promise<Buffer> => {
     if (!this.client) throw new Error('Call init first')
 
     try {
-      const urlObj = new URL(url)
       const response = await this.client.post('/get', null, {
-        params: { arg: urlObj.pathname },
-        headers: axiosMethodOptions.download.headers,
+        params: { arg: `/btfs/${hash}` },
         responseType: 'arraybuffer'
       })
 
@@ -129,17 +98,9 @@ class PollinationX {
     }
   }
 
-  private cp = async (hash: string, filename: string): Promise<boolean> => {
-    try {
-      await this.client.post('/files/cp', null, {
-        params: { arg: ['/btfs/' + hash, `/${filename}`] },
-        headers: axiosMethodOptions.default.headers
-      })
-
-      return true
-    } catch (error) {
-      return false
-    }
+  generateWallet = (): IWallet => {
+    const wallet = ethers.Wallet.createRandom()
+    return { address: wallet.address, mnemonic: wallet.mnemonic?.phrase, privateKey: wallet.privateKey }
   }
 }
 export const pollinationX = new PollinationX()

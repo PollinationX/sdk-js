@@ -4,11 +4,6 @@ export interface IAxiosMethodOptions {
       [key: string]: string
     }
   }
-  download: {
-    headers: {
-      [key: string]: string
-    }
-  }
   add: {
     headers: {
       [key: string]: string
@@ -24,4 +19,10 @@ export interface IAxiosMethodOptions {
       arg: string
     }
   }
+}
+
+export interface IWallet {
+  address: string
+  mnemonic?: string
+  privateKey: string
 }

@@ -6,11 +6,6 @@ export const axiosMethodOptions: IAxiosMethodOptions = {
       'Content-Type': 'application/json'
     }
   },
-  download: {
-    headers: {
-      'Accept-Encoding': 'gzip, deflate'
-    }
-  },
   add: {
     headers: {
       'Content-Type': 'multipart/form-data'
