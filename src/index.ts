@@ -74,8 +74,6 @@ class PollinationX {
       //   buffer
       // )
 
-
-
       const keyBuffer = Buffer.from(encryptionSecret, 'hex')
       const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
       const iv = crypto.getRandomValues(new Uint8Array(12))
@@ -84,10 +82,6 @@ class PollinationX {
       console.log(encryptedData, 'ENCRYPTED ENCRYPT')
       console.log(fileBuffer, 'FILE BUFFER ENCRYPT')
       console.log(iv, 'IV ENCRYPT')
-
-
-
-
 
       // const encryptionAlgoName = 'AES-GCM'
       // const encryptionAlgo = {
@@ -192,16 +186,15 @@ class PollinationX {
         //   response.data
         // )
 
-        // // const dataBuffer = new Uint8Array(response.data)
+        const dataBuffer = new Uint8Array(response.data)
         const keyBuffer = Buffer.from(encryptionSecret, 'hex')
         const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
-        const iv = response.data.slice(0, 12)
-        const encryptedData = response.data.slice(12)
+        const iv = dataBuffer.slice(0, 12)
+        const encryptedData = dataBuffer.slice(12)
         fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
         console.log(response.data, 'RESPONSE ARRAY BUFFER DECRYPT')
         console.log(fileBuffer, 'FILE BUFFER DECRYPT')
         console.log(iv, 'IV DECRYPT')
-
 
         // const encryptionAlgoName = 'AES-GCM'
         // const encryptionAlgo = {
