@@ -40,6 +40,9 @@ class PollinationX {
     const parsedPath = path.parse(filename)
     if (!parsedPath.ext) throw new Error('Filename extension is missing')
 
+    console.log('UPLOAD POLLINATIONX', encryptionSecret)
+    console.log('BUFFER POLLINATIONX', buffer.toString())
+    console.log('ENCRYPTED POLLINATIONX', CryptoJS.AES.encrypt(buffer.toString(), encryptionSecret as string).toString())
     const formData = new FormData()
     formData.append('file', encryptionSecret ? CryptoJS.AES.encrypt(buffer.toString(), encryptionSecret).toString() : buffer)
 
