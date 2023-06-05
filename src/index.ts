@@ -51,39 +51,39 @@ class PollinationX {
     const parsedPath = path.parse(filename)
     if (!parsedPath.ext) throw new Error('Filename extension is missing')
 
-    let fileBuffer: any = buffer
+    let fileBuffer = buffer
     if (encryptionSecret) {
-      const encryptionAlgoName = 'AES-GCM'
-      const encryptionAlgo = {
-        name: encryptionAlgoName,
-        iv: crypto.getRandomValues(new Uint8Array(12))
-      }
+      // const encryptionAlgoName = 'AES-GCM'
+      // const encryptionAlgo = {
+      //   name: encryptionAlgoName,
+      //   iv: crypto.getRandomValues(new Uint8Array(12))
+      // }
+      //
+      // const encryptionKey = await crypto.subtle.importKey(
+      //   'raw',
+      //   new Uint32Array([1,2,3,4,5,6,7,8]),
+      //   { name: encryptionAlgoName },
+      //   true,
+      //   ["encrypt", "decrypt"],
+      // )
+      //
+      // // encrypt the image
+      // fileBuffer = await crypto.subtle.encrypt(
+      //   encryptionAlgo,
+      //   encryptionKey,
+      //   buffer
+      // )
 
-      const encryptionKey = await crypto.subtle.importKey(
-        'raw',
-        new Uint32Array([1,2,3,4,5,6,7,8]),
-        { name: encryptionAlgoName },
-        true,
-        ["encrypt", "decrypt"],
-      )
-
-      // encrypt the image
-      fileBuffer = await crypto.subtle.encrypt(
-        encryptionAlgo,
-        encryptionKey,
-        buffer
-      )
 
 
-
-      // const keyBuffer = Buffer.from(encryptionSecret, 'hex')
-      // const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
-      // const iv = crypto.getRandomValues(new Uint8Array(12))
-      // const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, secretKey, buffer)
-      // fileBuffer = Buffer.concat([Buffer.from(iv), Buffer.from(encryptedData)])
-      // console.log(encryptedData, 'ENCRYPTED ENCRYPT')
-      // console.log(fileBuffer, 'FILE BUFFER ENCRYPT')
-      // console.log(iv, 'IV ENCRYPT')
+      const keyBuffer = Buffer.from(encryptionSecret, 'hex')
+      const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+      const iv = crypto.getRandomValues(new Uint8Array(12))
+      const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, secretKey, buffer)
+      fileBuffer = Buffer.concat([Buffer.from(iv), Buffer.from(encryptedData)])
+      console.log(encryptedData, 'ENCRYPTED ENCRYPT')
+      console.log(fileBuffer, 'FILE BUFFER ENCRYPT')
+      console.log(iv, 'IV ENCRYPT')
 
 
 
@@ -171,35 +171,36 @@ class PollinationX {
       let fileBuffer: any = response.data
 
       if (encryptionSecret) {
-        const encryptionAlgoName = 'AES-GCM'
-        const encryptionAlgo = {
-          name: encryptionAlgoName,
-          iv: crypto.getRandomValues(new Uint8Array(12))
-        }
-
-        const encryptionKey = await crypto.subtle.importKey(
-          'raw',
-          new Uint32Array([1,2,3,4,5,6,7,8]),
-          { name: encryptionAlgoName },
-          true,
-          ["encrypt", "decrypt"],
-        )
-
-        // encrypt the image
-        fileBuffer = await crypto.subtle.decrypt(
-          encryptionAlgo,
-          encryptionKey,
-          response.data
-        )
+        // const encryptionAlgoName = 'AES-GCM'
+        // const encryptionAlgo = {
+        //   name: encryptionAlgoName,
+        //   iv: crypto.getRandomValues(new Uint8Array(12))
+        // }
+        //
+        // const encryptionKey = await crypto.subtle.importKey(
+        //   'raw',
+        //   new Uint32Array([1,2,3,4,5,6,7,8]),
+        //   { name: encryptionAlgoName },
+        //   true,
+        //   ["encrypt", "decrypt"],
+        // )
+        //
+        // // encrypt the image
+        // fileBuffer = await crypto.subtle.decrypt(
+        //   encryptionAlgo,
+        //   encryptionKey,
+        //   response.data
+        // )
 
         // // const dataBuffer = new Uint8Array(response.data)
-        // const keyBuffer = Buffer.from(encryptionSecret, 'hex')
-        // const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
-        // const iv = response.data.slice(0, 12)
-        // const encryptedData = response.data.slice(12)
-        // console.log(fileBuffer, 'FILE BUFFER ENCRYPT')
-        // console.log(iv, 'IV ENCRYPT')
-        // fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
+        const keyBuffer = Buffer.from(encryptionSecret, 'hex')
+        const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+        const iv = response.data.slice(0, 12)
+        const encryptedData = response.data.slice(12)
+        fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
+        console.log(response.data, 'RESPONSE ARRAY BUFFER DECRYPT')
+        console.log(fileBuffer, 'FILE BUFFER DECRYPT')
+        console.log(iv, 'IV DECRYPT')
 
 
         // const encryptionAlgoName = 'AES-GCM'
