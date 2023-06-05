@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { axiosMethodOptions } from './config'
 import { IWallet } from './config/types'
-import CryptoJS from 'crypto-js'
+import * as CryptoJS from 'crypto-js'
 import * as FormData from 'form-data'
 import * as path from 'path'
 import * as tarStream from 'tar-stream'
