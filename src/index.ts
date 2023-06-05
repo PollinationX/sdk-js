@@ -5,8 +5,18 @@ import * as FormData from 'form-data'
 import * as path from 'path'
 import * as tarStream from 'tar-stream'
 import * as ethers from 'ethers'
-import * as crypto from 'crypto'
-
+// import * as crypto from 'crypto'
+let crypto;
+if (typeof window !== 'undefined' && window.crypto) {
+  // Browser environment
+  crypto = window.crypto;
+}
+else {
+  // Node.js environment
+  Promise.resolve().then(() => require('crypto')().then(cryptoModule => {
+    crypto = cryptoModule.webcrypto;
+  }));
+}
 interface IInitParams {
   url: string
   token: string
