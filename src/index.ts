@@ -39,7 +39,6 @@ class PollinationX {
 
     const parsedPath = path.parse(filename)
     if (!parsedPath.ext) throw new Error('Filename extension is missing')
-    CryptoJS.lib.WordArray
 
     let fileBuffer: any = buffer
     if (encryptionSecret) {
