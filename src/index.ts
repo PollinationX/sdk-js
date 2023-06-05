@@ -13,7 +13,7 @@ if (typeof window !== 'undefined' && window.crypto) {
 }
 else {
   // Node.js environment
-  Promise.resolve().then(() => require('crypto')().then(cryptoModule => {
+  Promise.resolve().then(() => import('crypto').then(cryptoModule => {
     crypto = cryptoModule.webcrypto;
   }));
 }
