@@ -26,3 +26,9 @@ export interface IWallet {
   mnemonic?: string
   privateKey: string
 }
+
+export interface ICryptoConfig {
+  name: string
+  length: number
+  ivLength: number
+}

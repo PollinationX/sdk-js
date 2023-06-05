@@ -1,23 +1,20 @@
 import axios, { AxiosInstance } from 'axios'
-import { axiosMethodOptions } from './config'
 import { IWallet } from './config/types'
+import { axiosMethodOptions, cryptoConfig } from './config'
 import * as FormData from 'form-data'
-import * as path from 'path'
 import * as tarStream from 'tar-stream'
 import * as ethers from 'ethers'
-// import * as crypto from 'crypto'
+import * as path from 'path'
+
 let crypto
-if (typeof window !== 'undefined' && window.crypto) {
-  // Browser environment
-  crypto = window.crypto
-} else {
-  // Node.js environment
+if (typeof window === 'undefined' || !window.crypto) {
   Promise.resolve().then(() =>
     import('crypto').then(cryptoModule => {
       crypto = cryptoModule.webcrypto
     })
   )
-}
+} else crypto = window.crypto
+
 interface IInitParams {
   url: string
   token: string
@@ -53,77 +50,20 @@ class PollinationX {
 
     let fileBuffer = buffer
     if (encryptionSecret) {
-      // const encryptionAlgoName = 'AES-GCM'
-      // const encryptionAlgo = {
-      //   name: encryptionAlgoName,
-      //   iv: crypto.getRandomValues(new Uint8Array(12))
-      // }
-      //
-      // const encryptionKey = await crypto.subtle.importKey(
-      //   'raw',
-      //   new Uint32Array([1,2,3,4,5,6,7,8]),
-      //   { name: encryptionAlgoName },
-      //   true,
-      //   ["encrypt", "decrypt"],
-      // )
-      //
-      // // encrypt the image
-      // fileBuffer = await crypto.subtle.encrypt(
-      //   encryptionAlgo,
-      //   encryptionKey,
-      //   buffer
-      // )
-
-      const keyBuffer = Buffer.from(encryptionSecret, 'hex')
-      const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
-      const iv = crypto.getRandomValues(new Uint8Array(12))
-      const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, secretKey, buffer)
-      fileBuffer = Buffer.concat([Buffer.from(iv), Buffer.from(encryptedData)])
-      console.log(encryptedData, 'ENCRYPTED ENCRYPT')
-      console.log(fileBuffer, 'FILE BUFFER ENCRYPT')
-      console.log(iv, 'IV ENCRYPT')
-
-      // const encryptionAlgoName = 'AES-GCM'
-      // const encryptionAlgo = {
-      //   name: encryptionAlgoName,
-      //   iv: crypto.getRandomValues(new Uint8Array(12)) // 96-bit
-      // }
-      //
-      // // create a 256-bit AES encryption key
-      // const encryptionKey = await crypto.subtle.importKey(
-      //   'raw',
-      //   new Uint32Array([1,2,3,4,5,6,7,8]),
-      //   { name: encryptionAlgoName },
-      //   true,
-      //   ["encrypt", "decrypt"],
-      // )
-      //
-      // // fetch a JPEG image
-      // // const imgBufferOrig = await (await fetch('https://fetch-progress.anthum.com/images/sunrise-baseline.jpg')).arrayBuffer()
-      //
-      // // encrypt the image
-      // fileBuffer = await crypto.subtle.encrypt(
-      //   encryptionAlgo,
-      //   encryptionKey,
-      //   buffer
-      // )
-      // const keyBuffer = Buffer.from(encryptionSecret, 'hex');
-      // const secretKey: any = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-      //
-      // // const keyData = await crypto.subtle.importKey('raw', Buffer.from(encryptionSecret, 'hex'), { name: 'AES-GCM' }, true, ['encrypt', 'decrypt'])
-      // const encryptionKey = await crypto.subtle.importKey(
-      //   'raw',
-      //   secretKey,
-      //   { name: encryptionAlgoName },
-      //   true,
-      //   ["encrypt", "decrypt"],
-      // )
-      //
-      // file = await crypto.subtle.encrypt(
-      //   'AES-GCM',
-      //   encryptionKey,
-      //   imgBufferOrig
-      // )
+      const iv = crypto.getRandomValues(new Uint8Array(cryptoConfig.ivLength))
+      fileBuffer = Buffer.concat([
+        Buffer.from(iv),
+        Buffer.from(
+          await crypto.subtle.encrypt(
+            { name: cryptoConfig.name, iv },
+            await crypto.subtle.importKey('raw', Buffer.from(encryptionSecret, 'hex'), { name: cryptoConfig.name, length: cryptoConfig.length }, true, [
+              'encrypt',
+              'decrypt'
+            ]),
+            buffer
+          )
+        )
+      ])
     }
 
     const formData = new FormData()
@@ -162,22 +102,6 @@ class PollinationX {
         responseType: 'arraybuffer'
       })
 
-      // let fileBuffer: any = response.data
-
-      // if (encryptionSecret) {
-      //   const dataBuffer = new Uint8Array(response.data)
-      //   const keyBuffer = Buffer.from(encryptionSecret, 'hex')
-      //   const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
-      //   const iv = dataBuffer.slice(0, 12)
-      //   const encryptedData = dataBuffer.slice(12)
-      //   fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
-      //   console.log(response.data, 'RESPONSE ARRAY BUFFER DECRYPT')
-      //   console.log(fileBuffer, 'FILE BUFFER DECRYPT')
-      //   console.log(iv, 'IV DECRYPT')
-      // }
-
-      // const data = encryptionSecret ? CryptoJS.AES.decrypt(response.data, encryptionSecret).toString(CryptoJS.enc.Utf8) : response.data
-
       return new Promise(resolve => {
         const extract = tarStream.extract()
 
@@ -190,14 +114,14 @@ class PollinationX {
             stream.on('end', async () => {
               if (encryptionSecret) {
                 const dataBuffer = new Uint8Array(fileBuffer)
-                const keyBuffer = Buffer.from(encryptionSecret, 'hex')
-                const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
-                const iv = dataBuffer.slice(0, 12)
-                const encryptedData = dataBuffer.slice(12)
-                fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
-                console.log(response.data, 'RESPONSE ARRAY BUFFER DECRYPT')
-                console.log(fileBuffer, 'FILE BUFFER DECRYPT')
-                console.log(iv, 'IV DECRYPT')
+                fileBuffer = await crypto.subtle.decrypt(
+                  { name: cryptoConfig.name, iv: dataBuffer.slice(0, cryptoConfig.ivLength) },
+                  await crypto.subtle.importKey('raw', Buffer.from(encryptionSecret, 'hex'), { name: cryptoConfig.name, length: cryptoConfig.length }, true, [
+                    'encrypt',
+                    'decrypt'
+                  ]),
+                  dataBuffer.slice(cryptoConfig.ivLength)
+                )
               }
               resolve(fileBuffer)
               next()

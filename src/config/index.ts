@@ -1,4 +1,4 @@
-import { IAxiosMethodOptions } from './types'
+import { IAxiosMethodOptions, ICryptoConfig } from './types'
 
 export const axiosMethodOptions: IAxiosMethodOptions = {
   default: {
@@ -21,4 +21,10 @@ export const axiosMethodOptions: IAxiosMethodOptions = {
       arg: '/'
     }
   }
+}
+
+export const cryptoConfig: ICryptoConfig = {
+  name: 'AES-GCM',
+  length: 256,
+  ivLength: 12
 }
