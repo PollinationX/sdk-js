@@ -6,16 +6,17 @@ import * as path from 'path'
 import * as tarStream from 'tar-stream'
 import * as ethers from 'ethers'
 // import * as crypto from 'crypto'
-let crypto;
+let crypto
 if (typeof window !== 'undefined' && window.crypto) {
   // Browser environment
-  crypto = window.crypto;
-}
-else {
+  crypto = window.crypto
+} else {
   // Node.js environment
-  Promise.resolve().then(() => import('crypto').then(cryptoModule => {
-    crypto = cryptoModule.webcrypto;
-  }));
+  Promise.resolve().then(() =>
+    import('crypto').then(cryptoModule => {
+      crypto = cryptoModule.webcrypto
+    })
+  )
 }
 interface IInitParams {
   url: string
@@ -52,14 +53,12 @@ class PollinationX {
 
     let fileBuffer: any = buffer
     if (encryptionSecret) {
-      const keyBuffer = Buffer.from(encryptionSecret, 'hex');
-      const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, secretKey, buffer);
-      fileBuffer = Buffer.concat([
-        Buffer.from(iv),
-        Buffer.from(encryptedData),
-      ]);
+      const keyBuffer = Buffer.from(encryptionSecret, 'hex')
+      const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+      const iv = crypto.getRandomValues(new Uint8Array(12))
+      const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, secretKey, buffer)
+      fileBuffer = Buffer.concat([Buffer.from(iv), Buffer.from(encryptedData)])
+      console.log(fileBuffer, 'FILE BUFFER ENCRYPT')
       // const encryptionAlgoName = 'AES-GCM'
       // const encryptionAlgo = {
       //   name: encryptionAlgoName,
@@ -142,12 +141,12 @@ class PollinationX {
       let fileBuffer: any = response.data
 
       if (encryptionSecret) {
-        const dataBuffer = new Uint8Array(response.data);
-        const keyBuffer = Buffer.from(encryptionSecret, 'hex');
-        const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-        const iv = dataBuffer.slice(0, 12);
-        const encryptedData = dataBuffer.slice(12);
-        fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData);
+        // const dataBuffer = new Uint8Array(response.data)
+        const keyBuffer = Buffer.from(encryptionSecret, 'hex')
+        const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+        const iv = response.data.slice(0, 12)
+        const encryptedData = response.data.slice(12)
+        fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
         // const encryptionAlgoName = 'AES-GCM'
         // const encryptionAlgo = {
         //   name: encryptionAlgoName,
