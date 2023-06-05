@@ -162,61 +162,19 @@ class PollinationX {
         responseType: 'arraybuffer'
       })
 
-      let fileBuffer: any = response.data
+      // let fileBuffer: any = response.data
 
-      if (encryptionSecret) {
-        // const encryptionAlgoName = 'AES-GCM'
-        // const encryptionAlgo = {
-        //   name: encryptionAlgoName,
-        //   iv: crypto.getRandomValues(new Uint8Array(12))
-        // }
-        //
-        // const encryptionKey = await crypto.subtle.importKey(
-        //   'raw',
-        //   new Uint32Array([1,2,3,4,5,6,7,8]),
-        //   { name: encryptionAlgoName },
-        //   true,
-        //   ["encrypt", "decrypt"],
-        // )
-        //
-        // // encrypt the image
-        // fileBuffer = await crypto.subtle.decrypt(
-        //   encryptionAlgo,
-        //   encryptionKey,
-        //   response.data
-        // )
-
-        const dataBuffer = new Uint8Array(response.data)
-        const keyBuffer = Buffer.from(encryptionSecret, 'hex')
-        const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
-        const iv = dataBuffer.slice(0, 12)
-        const encryptedData = dataBuffer.slice(12)
-        fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
-        console.log(response.data, 'RESPONSE ARRAY BUFFER DECRYPT')
-        console.log(fileBuffer, 'FILE BUFFER DECRYPT')
-        console.log(iv, 'IV DECRYPT')
-
-        // const encryptionAlgoName = 'AES-GCM'
-        // const encryptionAlgo = {
-        //   name: encryptionAlgoName,
-        //   iv: crypto.getRandomValues(new Uint8Array(12)) // 96-bit
-        // }
-        //
-        // // create a 256-bit AES encryption key
-        // const encryptionKey = await crypto.subtle.importKey(
-        //   'raw',
-        //   new Uint32Array([1, 2, 3, 4, 5, 6, 7, 8]),
-        //   { name: encryptionAlgoName },
-        //   true,
-        //   ["encrypt", "decrypt"],
-        // )
-        //
-        // fileBuffer = await crypto.subtle.decrypt(
-        //   encryptionAlgo,
-        //   encryptionKey,
-        //   response.data
-        // )
-      }
+      // if (encryptionSecret) {
+      //   const dataBuffer = new Uint8Array(response.data)
+      //   const keyBuffer = Buffer.from(encryptionSecret, 'hex')
+      //   const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+      //   const iv = dataBuffer.slice(0, 12)
+      //   const encryptedData = dataBuffer.slice(12)
+      //   fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
+      //   console.log(response.data, 'RESPONSE ARRAY BUFFER DECRYPT')
+      //   console.log(fileBuffer, 'FILE BUFFER DECRYPT')
+      //   console.log(iv, 'IV DECRYPT')
+      // }
 
       // const data = encryptionSecret ? CryptoJS.AES.decrypt(response.data, encryptionSecret).toString(CryptoJS.enc.Utf8) : response.data
 
@@ -229,14 +187,25 @@ class PollinationX {
             stream.on('data', chunk => {
               fileBuffer = Buffer.concat([fileBuffer, chunk])
             })
-            stream.on('end', () => {
+            stream.on('end', async () => {
+              if (encryptionSecret) {
+                const dataBuffer = new Uint8Array(fileBuffer)
+                const keyBuffer = Buffer.from(encryptionSecret, 'hex')
+                const secretKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+                const iv = dataBuffer.slice(0, 12)
+                const encryptedData = dataBuffer.slice(12)
+                fileBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, secretKey, encryptedData)
+                console.log(response.data, 'RESPONSE ARRAY BUFFER DECRYPT')
+                console.log(fileBuffer, 'FILE BUFFER DECRYPT')
+                console.log(iv, 'IV DECRYPT')
+              }
               resolve(fileBuffer)
               next()
             })
           }
           stream.resume()
         })
-        extract.end(Buffer.from(fileBuffer))
+        extract.end(Buffer.from(response.data))
       })
     } catch (error) {
       throw new Error(error?.response?.data?.Message || 'An error occurred')
