@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { axiosMethodOptions } from './config'
 import { IWallet } from './config/types'
+import CryptoJS from 'crypto-js'
 import * as FormData from 'form-data'
 import * as path from 'path'
 import * as tarStream from 'tar-stream'
@@ -31,7 +32,7 @@ class PollinationX {
     })
   }
 
-  upload = async (buffer: Buffer, filename: string): Promise<string> => {
+  upload = async (buffer: Buffer, filename: string, encryptionSecret?: string): Promise<string> => {
     if (!this.client) throw new Error('Call init first')
     if (!buffer) throw new Error('Buffer is required')
     if (!buffer) throw new Error('Filename is required')
@@ -40,7 +41,7 @@ class PollinationX {
     if (!parsedPath.ext) throw new Error('Filename extension is missing')
 
     const formData = new FormData()
-    formData.append('file', buffer)
+    formData.append('file', encryptionSecret ? CryptoJS.AES.encrypt(buffer.toString(), encryptionSecret).toString() : buffer)
 
     const addRes = await this.client.post('/add', formData, {
       params: axiosMethodOptions.add.params,
@@ -66,7 +67,7 @@ class PollinationX {
     }
   }
 
-  download = async (hash: string): Promise<Buffer> => {
+  download = async (hash: string, encryptionSecret?: string): Promise<Buffer> => {
     if (!this.client) throw new Error('Call init first')
 
     try {
@@ -74,6 +75,8 @@ class PollinationX {
         params: { arg: `/btfs/${hash}` },
         responseType: 'arraybuffer'
       })
+
+      const data = encryptionSecret ? CryptoJS.AES.decrypt(response.data, encryptionSecret).toString(CryptoJS.enc.Utf8) : response.data
 
       return new Promise(resolve => {
         const extract = tarStream.extract()
@@ -91,7 +94,7 @@ class PollinationX {
           }
           stream.resume()
         })
-        extract.end(Buffer.from(response.data))
+        extract.end(Buffer.from(data))
       })
     } catch (error) {
       throw new Error(error?.response?.data?.Message || 'An error occurred')
