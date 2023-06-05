@@ -1,11 +1,11 @@
 import axios, { AxiosInstance } from 'axios'
 import { axiosMethodOptions } from './config'
 import { IWallet } from './config/types'
-import * as CryptoJS from 'crypto-js'
 import * as FormData from 'form-data'
 import * as path from 'path'
 import * as tarStream from 'tar-stream'
 import * as ethers from 'ethers'
+import * as crypto from 'crypto'
 
 interface IInitParams {
   url: string
@@ -39,9 +39,55 @@ class PollinationX {
 
     const parsedPath = path.parse(filename)
     if (!parsedPath.ext) throw new Error('Filename extension is missing')
+    CryptoJS.lib.WordArray
+
+    let fileBuffer: any = buffer
+    if (encryptionSecret) {
+      const encryptionAlgoName = 'AES-GCM'
+      const encryptionAlgo = {
+        name: encryptionAlgoName,
+        iv: crypto.getRandomValues(new Uint8Array(12)) // 96-bit
+      }
+
+      // create a 256-bit AES encryption key
+      const encryptionKey = await crypto.subtle.importKey(
+        'raw',
+        new Uint32Array([1,2,3,4,5,6,7,8]),
+        { name: encryptionAlgoName },
+        true,
+        ["encrypt", "decrypt"],
+      )
+
+      // fetch a JPEG image
+      // const imgBufferOrig = await (await fetch('https://fetch-progress.anthum.com/images/sunrise-baseline.jpg')).arrayBuffer()
+
+      // encrypt the image
+      fileBuffer = await crypto.subtle.encrypt(
+        encryptionAlgo,
+        encryptionKey,
+        buffer
+      )
+      // const keyBuffer = Buffer.from(encryptionSecret, 'hex');
+      // const secretKey: any = await crypto.subtle.importKey('raw', keyBuffer, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+      //
+      // // const keyData = await crypto.subtle.importKey('raw', Buffer.from(encryptionSecret, 'hex'), { name: 'AES-GCM' }, true, ['encrypt', 'decrypt'])
+      // const encryptionKey = await crypto.subtle.importKey(
+      //   'raw',
+      //   secretKey,
+      //   { name: encryptionAlgoName },
+      //   true,
+      //   ["encrypt", "decrypt"],
+      // )
+      //
+      // file = await crypto.subtle.encrypt(
+      //   'AES-GCM',
+      //   encryptionKey,
+      //   imgBufferOrig
+      // )
+    }
 
     const formData = new FormData()
-    formData.append('file', encryptionSecret ? CryptoJS.AES.encrypt(buffer.toString(), encryptionSecret).toString() : buffer)
+    formData.append('file', fileBuffer)
 
     const addRes = await this.client.post('/add', formData, {
       params: axiosMethodOptions.add.params,
@@ -76,7 +122,32 @@ class PollinationX {
         responseType: 'arraybuffer'
       })
 
-      const data = encryptionSecret ? CryptoJS.AES.decrypt(response.data, encryptionSecret).toString(CryptoJS.enc.Utf8) : response.data
+      let fileBuffer: any = response.data
+
+      if (encryptionSecret) {
+        const encryptionAlgoName = 'AES-GCM'
+        const encryptionAlgo = {
+          name: encryptionAlgoName,
+          iv: crypto.getRandomValues(new Uint8Array(12)) // 96-bit
+        }
+
+        // create a 256-bit AES encryption key
+        const encryptionKey = await crypto.subtle.importKey(
+          'raw',
+          new Uint32Array([1, 2, 3, 4, 5, 6, 7, 8]),
+          { name: encryptionAlgoName },
+          true,
+          ["encrypt", "decrypt"],
+        )
+
+        fileBuffer = await crypto.subtle.decrypt(
+          encryptionAlgo,
+          encryptionKey,
+          response.data
+        )
+      }
+
+      // const data = encryptionSecret ? CryptoJS.AES.decrypt(response.data, encryptionSecret).toString(CryptoJS.enc.Utf8) : response.data
 
       return new Promise(resolve => {
         const extract = tarStream.extract()
@@ -94,7 +165,7 @@ class PollinationX {
           }
           stream.resume()
         })
-        extract.end(Buffer.from(data))
+        extract.end(Buffer.from(fileBuffer))
       })
     } catch (error) {
       throw new Error(error?.response?.data?.Message || 'An error occurred')
