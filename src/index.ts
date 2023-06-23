@@ -1,9 +1,11 @@
 import axios, { AxiosInstance } from 'axios'
-import { IWallet } from './config/types'
-import { axiosMethodOptions, cryptoConfig } from './config'
+import { IContract, IIsWhitelistedParams, IWallet } from './config/types'
+import { axiosMethodOptions, cryptoConfig, defaultTokenComparator, networkByChainId } from './config'
+import { Alchemy } from 'alchemy-sdk'
 import * as FormData from 'form-data'
-import * as tarStream from 'tar-stream'
 import * as ethers from 'ethers'
+import * as ethUtil from 'ethereumjs-util'
+import * as tarStream from 'tar-stream'
 import * as path from 'path'
 
 let crypto
@@ -21,6 +23,7 @@ interface IInitParams {
 }
 
 class PollinationX {
+  alchemy
   client: AxiosInstance
 
   init = (params: IInitParams): void => {
@@ -139,6 +142,68 @@ class PollinationX {
   generateWallet = (): IWallet => {
     const wallet = ethers.Wallet.createRandom()
     return { address: wallet.address, mnemonic: wallet.mnemonic?.phrase, privateKey: wallet.privateKey }
+  }
+
+  isWhitelisted = async (params: IIsWhitelistedParams): Promise<boolean> => {
+    const network = networkByChainId[params.chainId]
+    if (!network) throw new Error('Invalid parameter: chainId')
+
+    const { v, r, s } = ethUtil.fromRpcSig(params.signature)
+    const address = ethUtil
+      .bufferToHex(
+        ethUtil.pubToAddress(
+          ethUtil.ecrecover(
+            ethUtil.toBuffer(ethUtil.keccak(Buffer.from(`\x19Ethereum Signed Message:\n${params.signMessage.length}${params.signMessage}`, 'utf-8'))),
+            v,
+            r,
+            s
+          )
+        )
+      )
+      .toLowerCase()
+    if (params?.addresses?.length && !params.addresses.map(address => address.toLowerCase()).includes(address)) throw new Error('Address is not whitelisted')
+
+    this.alchemy = new Alchemy({
+      apiKey: process.env.ALCHEMY_API_KEY,
+      network
+    })
+
+    const ignoreTokenTypeConjunction = Object.values(params.token.type).length < 2
+    const tokenTypeConjunction = params.token.conjunction || defaultTokenComparator.type
+    let tokenTypeCompares: boolean[] = []
+
+    for (const [type, token] of Object.entries(params.token.type)) {
+      const contractAddresses: string[] = token.contracts.map((contract: IContract) => contract.address)
+      const response = await this.alchemy.core.getTokenBalances(address, contractAddresses)
+      const ignoreTokenConjunction = contractAddresses.length < 2
+      const tokenConjunction = token.conjunction || defaultTokenComparator.token
+      let tokenCompares: boolean[] = []
+
+      for (const tokenValue of response.tokenBalances) {
+        const tokenContract = token.contracts
+          .map((contract: IContract) => ({ ...contract, address: contract.address.toLowerCase() }))
+          .find((contract: IContract) => contract.address === tokenValue.contractAddress.toLowerCase())
+        if (!tokenContract) throw new Error('Token address is invalid')
+
+        const tokenBalance = parseInt(tokenValue.tokenBalance, 16).toString()
+        const compare = ethers.BigNumber.from(tokenBalance)[tokenContract.conditions.comparator](ethers.BigNumber.from(tokenContract?.conditions?.value))
+        if (!compare && (ignoreTokenConjunction || tokenConjunction === '&&')) throw new Error('Conditions does not match')
+        tokenCompares.push(compare)
+      }
+
+      tokenCompares = tokenCompares.filter(status => status)
+      if (!tokenCompares.length) {
+        if (!ignoreTokenTypeConjunction && tokenTypeConjunction === '&&') throw new Error('Conditions does not match')
+        tokenTypeCompares.push(false)
+      } else tokenTypeCompares.push(true)
+    }
+
+    tokenTypeCompares = tokenTypeCompares.filter(status => status)
+    if (tokenTypeCompares.length) {
+      if (!ignoreTokenTypeConjunction && tokenTypeConjunction === '&&') throw new Error('Conditions does not match')
+    } else throw new Error('Conditions does not match')
+
+    return true
   }
 }
 export const pollinationX = new PollinationX()

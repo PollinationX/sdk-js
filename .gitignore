@@ -38,6 +38,9 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# local env files
+.env*.local
+
 test.ts
 server.js
 image.png

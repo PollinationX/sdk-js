@@ -1,4 +1,5 @@
-import { IAxiosMethodOptions, ICryptoConfig } from './types'
+import { IAxiosMethodOptions, ICryptoConfig, IDefaultTokenConjunction, INetworkByChainId } from './types';
+import { Network } from 'alchemy-sdk';
 
 export const axiosMethodOptions: IAxiosMethodOptions = {
   default: {
@@ -27,4 +28,13 @@ export const cryptoConfig: ICryptoConfig = {
   name: 'AES-GCM',
   length: 256,
   ivLength: 12
+}
+
+export const networkByChainId: INetworkByChainId = {
+  11155111: Network.MATIC_MUMBAI
+}
+
+export const defaultTokenComparator: IDefaultTokenConjunction = {
+  token: '||',
+  type: '||'
 }

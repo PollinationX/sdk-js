@@ -1,6 +1,6 @@
 {
   "name": "@pollinationx/core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "PollinationX SDK-JS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,9 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
+    "alchemy-sdk": "^2.9.0",
     "axios": "^1.2.2",
+    "ethereumjs-util": "^7.1.5",
     "ethers": "5.7.2",
     "form-data": "^4.0.0",
     "path": "^0.12.7",
